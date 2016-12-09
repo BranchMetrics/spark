@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# This is the Branch fork of the official Spark repo. Branch started to use the fork from
+# Spark version 1.6.1. Branch bundles Spark with Hadoop 2.7.2.
+#
+# To make a binary tar ball,
+# ./make-distribution.sh --tgz -Pyarn -Phadoop-2.7 -Phive -Phive-thriftserver -DskipTests 2>&1 |tee /tmp/build
+#
+# Some noticeable changes of this fork from the official upstream
+#
+# - 2016-12-08
+#   - add "hadoop-2.7" profile to the build
+#   - Bundle aws-java-sdk 1.7.4 and hadoop-aws 2.7.2 packages into the final Spark core lib. And the versions are
+#     pinned to these specific versions
+#   - jackson libs are pinned to version 2.4.4: jackson-annotations, jackson-databind, jackson-core
+#   - spark-examples-1.6.1-hadoop2.7.2.jar is not part of the final binary tar
+#   - some pom configuration changes in /src-path/pom.xml and /src-path/core/pom.xml to make the above happened
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -167,7 +183,8 @@ export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCac
 # Store the command as an array because $MVN variable might have spaces in it.
 # Normal quoting tricks don't work.
 # See: http://mywiki.wooledge.org/BashFAQ/050
-BUILD_COMMAND=("$MVN" clean package -DskipTests $@)
+# BUILD_COMMAND=("$MVN" clean package -DskipTests $@)
+BUILD_COMMAND=("$MVN" package -DskipTests $@)
 
 # Actually build the jar
 echo -e "\nBuilding with..."
@@ -183,7 +200,8 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
 # Copy jars
 cp "$SPARK_HOME"/assembly/target/scala*/*assembly*hadoop*.jar "$DISTDIR/lib/"
-cp "$SPARK_HOME"/examples/target/scala*/spark-examples*.jar "$DISTDIR/lib/"
+# Skip example jar file in the final binary
+# cp "$SPARK_HOME"/examples/target/scala*/spark-examples*.jar "$DISTDIR/lib/"
 # This will fail if the -Pyarn profile is not provided
 # In this case, silence the error and ignore the return code of this command
 cp "$SPARK_HOME"/network/yarn/target/scala*/spark-*-yarn-shuffle.jar "$DISTDIR/lib/" &> /dev/null || :
@@ -262,6 +280,6 @@ if [ "$MAKE_TGZ" == "true" ]; then
   TARDIR="$SPARK_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -r "$DISTDIR" "$TARDIR"
-  tar czf "spark-$VERSION-bin-$NAME.tgz" -C "$SPARK_HOME" "$TARDIR_NAME"
+  tar czf "Branch-spark-$VERSION-bin-$NAME.tgz" -C "$SPARK_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
 fi
